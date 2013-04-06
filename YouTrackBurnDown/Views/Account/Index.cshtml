@@ -1,0 +1,18 @@
+﻿@model AccountCredentials
+
+@{
+    ViewBag.Title = "YouTrack Login";
+}
+
+@Html.ValidationSummary()
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+
+    @Html.EditorFor(m => m.Login)
+
+    @Html.PasswordFor(m => m.Password)
+
+    <button type="submit">Login</button>
+}

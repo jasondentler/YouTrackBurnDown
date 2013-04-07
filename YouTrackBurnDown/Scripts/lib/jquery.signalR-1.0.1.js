@@ -10,7 +10,6 @@
  *
  */
 
-/// <reference path="Scripts/jquery-1.6.4.js" />
 (function ($, window) {
     "use strict";
 
@@ -655,7 +654,6 @@
 // Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.md in the project root for license information.
 
 /*global window:false */
-/// <reference path="jquery.signalR.core.js" />
 
 (function ($, window) {
     "use strict";
@@ -974,7 +972,6 @@
 // Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.md in the project root for license information.
 
 /*global window:false */
-/// <reference path="jquery.signalR.transports.common.js" />
 
 (function ($, window) {
     "use strict";
@@ -1128,7 +1125,6 @@
 // Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.md in the project root for license information.
 
 /*global window:false */
-/// <reference path="jquery.signalR.transports.common.js" />
 
 (function ($, window) {
     "use strict";
@@ -1324,7 +1320,6 @@
 // Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.md in the project root for license information.
 
 /*global window:false */
-/// <reference path="jquery.signalR.transports.common.js" />
 
 (function ($, window) {
     "use strict";
@@ -1485,7 +1480,6 @@
 // Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.md in the project root for license information.
 
 /*global window:false */
-/// <reference path="jquery.signalR.transports.common.js" />
 
 (function ($, window) {
     "use strict";
@@ -1678,7 +1672,6 @@
 // Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.md in the project root for license information.
 
 /*global window:false */
-/// <reference path="jquery.signalR.core.js" />
 
 (function ($, window) {
     "use strict";
@@ -2001,7 +1994,6 @@
 // Copyright (c) Microsoft Open Technologies, Inc. All rights reserved. See License.md in the project root for license information.
 
 /*global window:false */
-/// <reference path="jquery.signalR.core.js" />
 (function ($) {
     $.signalR.version = "1.0.1";
 }(window.jQuery));

@@ -1,5 +1,4 @@
 ﻿highcharts.js
-gray.js
 
 [references]
 ~/scripts/lib

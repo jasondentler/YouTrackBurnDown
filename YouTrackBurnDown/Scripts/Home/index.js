@@ -1,5 +1,8 @@
 ﻿///<reference path="~/SignalR"/>
-///<reference path="~/Scripts/highcharts/"/>
+///<reference path="~/Scripts/lib/"/>
+///<reference path="http://code.highcharts.com/highcharts.js"/>
+///<reference path="http://code.highcharts.com/themes/gray.js"/>
+
 $(function () {
     var hub = $.connection.youTrackHub;
 
@@ -10,9 +13,14 @@ $(function () {
         var filters = [
             '#{Business Systems} -land-legal -JDEdwards',
             '#{Business Systems} #{JDEdwards}',
-            '#{Marketing Systems}',
-            ''
+            '#{Marketing Systems}'
         ];
+        var filterLabels = [
+            'BS NET',
+            'BS JDE',
+            'Marketing'
+        ];
+
 
         var start = null;
         var finish = null;
@@ -39,26 +47,37 @@ $(function () {
             var results = Array.prototype.slice.call(arguments);
             for (var idx = 0; idx < results.length; idx++) {
                 var result = results[idx];
-                var projectShortName = result.Item1;
-                var start = result.Item3;
-                var finish = result.Item4;
-                var item = byProject[projectShortName];
-                item.start = start;
-                item.finish = finish;
+                var item = byProject[result.Item1];
+                item.start = result.Item3;
+                item.finish = result.Item4;
                 if (start == null)
                     start = item.start;
-                if (item.finish == null)
+                if (finish == null)
                     finish = item.finish;
-                if (start != item.start)
+                if (start != item.start) {
+                    console.log(start);
+                    console.log(item.start);
                     throw 'Start dates differ between projects';
-                if (finish != item.finish)
+                }
+                if (finish != item.finish) {
+                    console.log(finish);
+                    console.log(item.finish);
                     throw 'Finish dates differ between projects';
+                }
             }
+
+            var startDt = new Date(start);
+            startDt.setUTCHours(8, 0, 0, 0);
+            start = startDt.toString();
+
+            var finishDt = new Date(finish);
+            finishDt.setUTCHours(8, 0, 0, 0);
+            finish = finishDt.toString();
+
             sprintDatesLoadedPromise.resolve();
         }).fail(function () {
             sprintDatesLoadedPromise.reject();
         });
-
 
         // Load Ticket Data
         var ticketDataLoadedPromise = $.Deferred();
@@ -121,12 +140,157 @@ $(function () {
             }
         }
 
+        function deleteUnresolved(items) {
+            for (var idx = 0; idx < items.length; idx++) {
+                var item = items[idx];
+                while (typeof item.resolved === 'undefined') {
+                    items.splice(idx, 1);
+                    item = items[idx];
+                }
+            }
+        }
+
+        function sortByResolved(items) {
+            var sortFunc = function (a, b) {
+                if (a.resolved < b.resolved) return -1;
+                if (a.resolved > b.resolved) return 1;
+                return 0;
+            };
+            items.sort(sortFunc);
+        }
+
+        function normalizeMaximums(chart) {
+            var max = 0;
+            for (var seriesIdx = 0; seriesIdx < chart.series.length; seriesIdx++) {
+                var series = chart.series[seriesIdx].data;
+                if (series[0][1] > max)
+                    max = series[0][1];
+            }
+
+            for (seriesIdx = 0; seriesIdx < chart.series.length; seriesIdx++) {
+                series = chart.series[seriesIdx].data;
+                //if (series[0][1] == max)
+                //continue;
+
+                var factor = 100 * (max / series[0][1]) / max;
+                for (var idx = 0; idx < series.length; idx++) {
+                    var item = series[idx];
+                    item[1] *= factor;
+                }
+            }
+        }
+
+        function countWorkingDays(start, finish) {
+            var currentTicks = start.getTime();
+            var finishTicks = finish.getTime();
+            var workingDays = 0;
+
+            while (currentTicks < finishTicks) {
+                currentTicks += 24 * 60 * 60 * 1000;
+                switch (new Date(currentTicks).getDay()) {
+                    case 0:
+                    case 6:
+                        break;
+                    default:
+                        workingDays += 1;
+                        break;
+                }
+            }
+            return workingDays;
+        }
+
+        function getIdealPercentage(totalWorkingDays, date) {
+            var currentWorkingDays = countWorkingDays(new Date(start), date);
+            return (1 - (currentWorkingDays / totalWorkingDays)) * 100;
+        }
+
         $.when(ticketDataLoadedPromise, sprintDatesLoadedPromise).done(function () {
+            var chart = {
+                chart: {
+                    type: 'spline'
+                },
+                title: {
+                    text: 'Sprint ' + selectedSprint + ' Burndown'
+                },
+                subtitle: {
+                    text: new Date(new Date(start).getTime() + new Date().getTimezoneOffset() * 60 * 1000).toString() +
+                        ' to ' + new Date(new Date(finish).getTime() + new Date().getTimezoneOffset() * 60 * 1000).toString()
+                },
+                xAxis: {
+                    type: 'datetime'
+                },
+                yAxis: {
+                    max: 100,
+                    min: 0,
+                    labels: {
+                        format: '{value}%'
+                    }
+                },
+                series: []
+            };
+
             for (var idx = 0; idx < byLine.length; idx++) {
                 var line = byLine[idx];
                 line.estimate = sumEstimates(line.items);
+                deleteUnresolved(line.items);
+                sortByResolved(line.items);
+
+                var series = { name: filterLabels[idx], data: [[Date.parse(start), line.estimate]] };
+
+                var remaining = line.estimate;
+                for (var idx2 = 0; idx2 < line.items.length; idx2++) {
+                    var item = line.items[idx2];
+                    remaining -= item.estimate;
+
+                    var last = series.data[series.data.length - 1][0];
+                    var current = Date.parse(item.resolved);
+                    var offset = new Date().getTimezoneOffset() * 60 * 1000;
+                    current -= offset;
+                    if (current <= last) {
+                        if (series.data.length == 1) {
+                            // If we get started early, leave the first point with the maximum
+                            series.data.push([last, remaining]);
+                        } else {
+                            series.data[series.data.length - 1][1] = remaining;
+                        }
+                    } else {
+                        var datapoint = [current, remaining];
+                        series.data.push(datapoint);
+                    }
+                }
+
+                last = Date.parse(finish);
+                var now = new Date().getTime();
+                console.log('Calculating last dot');
+                console.log(last);
+                console.log(now);
+                console.log(new Date(last));
+                console.log(new Date(now));
+                if (now < last)
+                    last = now;
+                last -= new Date().getTimezoneOffset() * 60 * 1000;
+                series.data.push([last, remaining]);
+
+                chart.series.push(series);
             }
-            console.log(byLine);
+
+            normalizeMaximums(chart);
+
+            series = { name: 'Ideal', lineWidth: 5, data: [] };
+            var totalWorkingDays = countWorkingDays(new Date(start), new Date(finish));
+
+            current = new Date(start);
+            while (current < new Date(finish)) {
+                series.data.push([current.getTime(), getIdealPercentage(totalWorkingDays, current)]);
+                current = new Date(current.getTime() + 24 * 60 * 60 * 1000);
+            }
+            series.data.push([Date.parse(finish), 0]);
+
+            chart.series.splice(0, 0, series);
+
+            $('#chart')
+                .css('height', $(document).height() + 'px')
+                .highcharts(chart);
         });
 
     });

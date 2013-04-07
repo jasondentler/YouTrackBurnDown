@@ -72,6 +72,7 @@ $(function () {
 
             var finishDt = new Date(finish);
             finishDt.setUTCHours(8, 0, 0, 0);
+            finishDt = new Date(finishDt.getTime() + 24 * 60 * 60 * 1000);
             finish = finishDt.toString();
 
             sprintDatesLoadedPromise.resolve();
@@ -189,7 +190,7 @@ $(function () {
                 currentTicks += 24 * 60 * 60 * 1000;
                 switch (new Date(currentTicks).getDay()) {
                     case 0:
-                    case 6:
+                    case 1:
                         break;
                     default:
                         workingDays += 1;
@@ -213,8 +214,8 @@ $(function () {
                     text: 'Sprint ' + selectedSprint + ' Burndown'
                 },
                 subtitle: {
-                    text: new Date(new Date(start).getTime() + new Date().getTimezoneOffset() * 60 * 1000).toString() +
-                        ' to ' + new Date(new Date(finish).getTime() + new Date().getTimezoneOffset() * 60 * 1000).toString()
+                    text: new Date(new Date(start).getTime() + new Date().getTimezoneOffset() * 60 * 1000).toLocaleDateString('dddd, MMMM, yyyy') +
+                        ' to ' + new Date(new Date(finish).getTime() + new Date().getTimezoneOffset() * 60 * 1000).toLocaleDateString('dddd, MMMM, yyyy')
                 },
                 xAxis: {
                     type: 'datetime'

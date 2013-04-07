@@ -214,8 +214,8 @@ $(function () {
                     text: 'Sprint ' + selectedSprint + ' Burndown'
                 },
                 subtitle: {
-                    text: new Date(new Date(start).getTime() + new Date().getTimezoneOffset() * 60 * 1000).toLocaleDateString('dddd, MMMM, yyyy') +
-                        ' to ' + new Date(new Date(finish).getTime() + new Date().getTimezoneOffset() * 60 * 1000).toLocaleDateString('dddd, MMMM, yyyy')
+                    text: new Date(new Date(start).getTime() + new Date().getTimezoneOffset() * 60 * 1000).toLocaleDateString() +
+                        ' to ' + new Date(new Date(finish).getTime() + new Date().getTimezoneOffset() * 60 * 1000).toLocaleDateString()
                 },
                 xAxis: {
                     type: 'datetime'

@@ -13,12 +13,14 @@ $(function () {
         var filters = [
             '#{Business Systems} -land-legal -JDEdwards',
             '#{Business Systems} #{JDEdwards}',
-            '#{Marketing Systems}'
+            '#{Marketing Systems}',
+            '#{land-legal}'
         ];
         var filterLabels = [
             'BS NET',
             'BS JDE',
-            'Marketing'
+            'Marketing',
+            'Headspring'
         ];
 
 
@@ -142,9 +144,12 @@ $(function () {
         }
 
         function deleteUnresolved(items) {
+            console.log(items);
             for (var idx = 0; idx < items.length; idx++) {
                 var item = items[idx];
-                while (typeof item.resolved === 'undefined') {
+                console.log(idx);
+                console.log(item);
+                while (idx < items.length && typeof item.resolved === 'undefined') {
                     items.splice(idx, 1);
                     item = items[idx];
                 }
@@ -236,7 +241,7 @@ $(function () {
                 deleteUnresolved(line.items);
                 sortByResolved(line.items);
 
-                var series = { name: filterLabels[idx], data: [[Date.parse(start), line.estimate]] };
+                var series = { name: filterLabels[idx] + ': ' + Math.round(line.estimate) + ' pts', data: [[Date.parse(start), line.estimate]] };
 
                 var remaining = line.estimate;
                 for (var idx2 = 0; idx2 < line.items.length; idx2++) {
@@ -288,6 +293,14 @@ $(function () {
             series.data.push([Date.parse(finish), 0]);
 
             chart.series.splice(0, 0, series);
+
+            for (idx = 0; idx < chart.series.length; idx++) {
+                series = chart.series[idx];
+                for (idx2 = 0; idx2 < series.data.length; idx2++) {
+                    item = series.data[idx2];
+                    item[1] = Math.round(item[1]);
+                }
+            }
 
             $('#chart')
                 .css('height', $(document).height() + 'px')

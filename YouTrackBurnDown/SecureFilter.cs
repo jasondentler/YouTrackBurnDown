@@ -14,7 +14,11 @@ namespace YouTrackBurnDown
             var isSecure = request.IsSecureConnection;
             if (!isSecure)
             {
-                var builder = new UriBuilder(request.Url) {Scheme = Uri.UriSchemeHttps};
+                var builder = new UriBuilder(request.Url)
+                    {
+                        Scheme = Uri.UriSchemeHttps,
+                        Port = 443
+                    };
                 var secureUrl = builder.Uri.ToString();
                 filterContext.Result = new RedirectResult(secureUrl);
                 return;

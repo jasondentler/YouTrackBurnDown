@@ -191,6 +191,7 @@
     <Compile Include="Models\BurnDown.cs" />
     <Compile Include="Api\Client.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SecureFilter.cs" />
     <Compile Include="YouTrackHub.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -7,7 +7,7 @@ namespace YouTrackBurnDown
     {
         public static void RegisterGlobalFilters(GlobalFilterCollection filters)
         {
-            filters.Add(new SecureFilter());
+            filters.Add(new YouTrackBurnDown.RequireHttpsAttribute());
             filters.Add(new HandleErrorAttribute());
         }
     }

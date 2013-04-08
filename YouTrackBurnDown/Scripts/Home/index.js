@@ -1,7 +1,6 @@
 ﻿///<reference path="~/SignalR"/>
 ///<reference path="~/Scripts/lib/"/>
-///<reference path="http://code.highcharts.com/highcharts.js"/>
-///<reference path="http://code.highcharts.com/themes/gray.js"/>
+///<reference path="~/Scripts/highcharts/"/>
 
 $(function () {
     var hub = $.connection.youTrackHub;

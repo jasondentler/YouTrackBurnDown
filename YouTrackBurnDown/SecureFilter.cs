@@ -11,7 +11,7 @@ namespace YouTrackBurnDown
         {
 #if !DEBUG
             var request = filterContext.RequestContext.HttpContext.Request;
-            var isSecure = request.IsSecureConnection;
+            var isSecure = request.IsSecureConnection || request.Url.Scheme == Uri.UriSchemeHttps;
             if (!isSecure)
             {
                 var builder = new UriBuilder(request.Url)

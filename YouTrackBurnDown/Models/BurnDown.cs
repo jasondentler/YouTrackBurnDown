@@ -19,5 +19,6 @@ namespace YouTrackBurnDown.Models
 
         public IEnumerable<Project> Projects { get; set; }
 
+        public string SelectedSprint { get; set; }
     }
 }

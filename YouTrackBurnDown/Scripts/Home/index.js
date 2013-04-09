@@ -6,7 +6,9 @@ $(function () {
     var hub = $.connection.youTrackHub;
 
     $.connection.hub.start().done(function () {
-        var selectedSprint = '1307';
+        model = model || { Projects: [] };
+
+        var selectedSprint = model.SelectedSprint || '1307';
         var sprintFieldName = 'Fix Versions';
         var estimateFieldName = 'Estimation';
         var filters = [

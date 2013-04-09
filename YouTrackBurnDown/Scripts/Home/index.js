@@ -11,6 +11,7 @@ $(function () {
         var selectedSprint = model.SelectedSprint || '1307';
         var sprintFieldName = 'Fix Versions';
         var estimateFieldName = 'Estimation';
+        var featureType = '["Feature"]';
         var filters = [
             '#{Business Systems} -land-legal -JDEdwards',
             '#{Business Systems} #{JDEdwards}',
@@ -106,7 +107,7 @@ $(function () {
 
         var queryPromise = hub.server.query(
             sprintSpecificFilters,
-            ['id', 'resolved', 'Estimation', 'projectShortName'],
+            ['id', 'resolved', 'Estimation', 'projectShortName', 'type'],
             1000, 1);
 
         queryPromise.done(function (results) {
@@ -115,6 +116,26 @@ $(function () {
             ticketDataLoadedPromise.reject();
         });
 
+        function removeFeatures(items) {
+            var idx2 = 0;
+            while (idx2 < items.length) {
+                var item = items[idx2];
+                if (item['Type'] == featureType) {
+                    if (!(typeof item[estimateFieldName] === "undefined")) {
+                        var estimateJson = item[estimateFieldName];
+                        var estimateArray = JSON.parse(estimateJson);
+                        var estimateValue = estimateArray[0];
+                        if (estimateValue > 0) {
+                            idx2++;
+                            continue; // It has an estimate, so move on
+                        }
+                    }
+                    items.splice(idx2, 1);
+                } else {
+                    idx2++;
+                }
+            }
+        }
 
         function sumEstimates(items) {
             var itemsWithoutEstimate = 0;
@@ -145,11 +166,8 @@ $(function () {
         }
 
         function deleteUnresolved(items) {
-            console.log(items);
             for (var idx = 0; idx < items.length; idx++) {
                 var item = items[idx];
-                console.log(idx);
-                console.log(item);
                 while (idx < items.length && typeof item.resolved === 'undefined') {
                     items.splice(idx, 1);
                     item = items[idx];
@@ -238,6 +256,7 @@ $(function () {
 
             for (var idx = 0; idx < byLine.length; idx++) {
                 var line = byLine[idx];
+                removeFeatures(line.items);
                 line.estimate = sumEstimates(line.items);
                 deleteUnresolved(line.items);
                 sortByResolved(line.items);
@@ -268,11 +287,6 @@ $(function () {
 
                 last = Date.parse(finish);
                 var now = new Date().getTime();
-                console.log('Calculating last dot');
-                console.log(last);
-                console.log(now);
-                console.log(new Date(last));
-                console.log(new Date(now));
                 if (now < last)
                     last = now;
                 last -= new Date().getTimezoneOffset() * 60 * 1000;

@@ -22,7 +22,15 @@ namespace YouTrackBurnDown.Api
 
         public List<Item> AssigneesFullName { get; set; }
 
-        public string[] Sprints { get { return JsonConvert.DeserializeObject<string[]>(Versions); } }
+        public string[] Sprints
+        {
+            get
+            {
+                return Versions == null
+                           ? new string[0]
+                           : JsonConvert.DeserializeObject<string[]>(Versions);
+            }
+        }
 
     }
 }

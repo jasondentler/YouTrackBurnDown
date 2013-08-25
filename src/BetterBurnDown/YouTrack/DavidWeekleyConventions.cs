@@ -102,15 +102,17 @@ namespace BetterBurnDown.YouTrack
 
         private void FillLine(Line line, ISprint sprint, Issue[] issues, IEnumerable<string> ignoreTypes)
         {
+            var sprintStart = new DateTime(sprint.Start.Ticks, DateTimeKind.Local);
+
             issues = issues.Where(i => !ignoreTypes.Contains(i.Type)).ToArray();
             var issueCount = issues.Count(i => i.Value.HasValue);
             var issueTotal = issues.Sum(i => i.Value != null ? i.Value.Value : 0);
-
+            
             var averageValue = issueTotal/issueCount;
 
             issueTotal = issues.Sum(i => i.Value != null ? i.Value.Value : averageValue);
 
-            line.AddPoint(issueTotal, sprint.Start);
+            line.AddPoint(issueTotal, sprintStart);
 
             var pointIssues = issues.Where(i => i.Timestamp.HasValue).OrderBy(i => i.Timestamp.Value);
             foreach (var pointIssue in pointIssues)
@@ -118,8 +120,8 @@ namespace BetterBurnDown.YouTrack
                 var value = pointIssue.Value.HasValue ? pointIssue.Value.Value : averageValue;
                 var change = (float) (value*-1.0);
                 var timestamp = pointIssue.Timestamp.Value;
-                if (timestamp < sprint.Start)
-                    timestamp = sprint.Start;
+                if (timestamp < sprintStart)
+                    timestamp = sprintStart;
                 var point = line.AddPointByChange(change, timestamp);
                 point.Label = pointIssue.Id;
                 point.Description = pointIssue.Summary;

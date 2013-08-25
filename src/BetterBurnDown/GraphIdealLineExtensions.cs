@@ -73,16 +73,16 @@ namespace BetterBurnDown
 
         private static IEnumerable<KeyValuePair<DateTime, float>> GenerateTypicalStaffingPercentages(DateTime firstDay, DateTime lastDay)
         {
-            firstDay = firstDay.Date;
-            lastDay = lastDay.Date;
+            firstDay = new DateTime(firstDay.Date.Ticks, DateTimeKind.Local);
+            lastDay = new DateTime(lastDay.Date.Ticks, DateTimeKind.Local);
             var current = firstDay;
-
+            current = new DateTime(current.Ticks, DateTimeKind.Local);
             while (current <= lastDay)
             {
                 if (current.DayOfWeek.IsWeekday())
                 {
-                    yield return new KeyValuePair<DateTime, float>(current.AddHours(8), 0);
-                    yield return new KeyValuePair<DateTime, float>(current.AddHours(12).AddHours(5), 100);
+                    yield return new KeyValuePair<DateTime, float>(current.AddHours(8).ToUniversalTime(), 0);
+                    yield return new KeyValuePair<DateTime, float>(current.AddHours(12).AddHours(5).ToUniversalTime(), 100);
                 }
                 current = current.AddDays(1);
             }

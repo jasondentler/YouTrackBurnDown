@@ -4,26 +4,100 @@
 {
     @Scripts.Render("~/bundles/highcharts")
     <script type="text/javascript">
+        var ISODate = {
+            convert:
+              function (input) {
+                  if (!(typeof input === "string")) throw "ISODate, convert: input must be a string";
+                  var d = input.match(/^(\d{4})-?(\d{2})-?(\d{2})[T ](\d{2}):?(\d{2}):?(\d{2})(\.\d+)?(Z|(?:([+-])(\d{2}):?(\d{2})))$/i);
+                  if (!d) throw "ISODate, convert: Illegal format";
+                  return new Date(
+                    Date.UTC(
+                      d[1], d[2] - 1, d[3],
+                      d[4], d[5], d[6], d[7] || 0 % 1 * 1000 | 0
+                    ) + (
+                      d[8].toUpperCase() === "Z" ? 0 :
+                        (d[10] * 3600 + d[11] * 60) * (d[9] === "-" ? 1000 : -1000)
+                    )
+                  );
+              },
+            format:
+              function (date, utc) {
+                  if (typeof date === "string") date = this.convert(date);
+                  if (!(date instanceof Date)) throw "ISODate, format: t is not a date object";
+
+                  var t = { 'FullYear': 0, 'Month': 0, 'Date': 0, 'Hours': 0, 'Minutes': 0, 'Seconds': 0 };
+                  for (var key in t) {
+                      if (t.hasOwnProperty(key)) t[key] = date["get" + (utc ? "UTC" : "") + key]()
+                  }
+
+                  return this.month[t.Month]
+                    + " "
+                    + this.ordinal(t.Date)
+                    + ", "
+                    + t.FullYear
+                    + " @@ "
+        + this.clock12(t.Hours, t.Minutes);
+    },
+            month:
+              [
+                "January", "February", "March", "April", "May", "June",
+                "July", "August", "September", "October", "November", "December"
+              ],
+            ordinal:
+              function (n) {
+                  return n + (
+                    [
+                      "th", "st", "nd", "rd"
+                    ][
+                      ((n % 100 / 10) | 0) === 1 ? 0 : n % 10 < 4 ? n % 10 : 0
+                  ]
+                  );
+              },
+            clock12:
+              function (h24, m, s) {
+                  h24 %= 24;
+                  var h12 = (h24 % 12) || 12;
+                  return h12 + ":" +
+                    (m < 10 ? "0" + m : m) +
+                    (isFinite(s) ? ":" + (s < 10 ? "0" + s : s) : "") +
+                    (h24 < 12 ? "AM" : "PM");
+              }
+        };
+    </script>
+    <script type="text/javascript">
         $(function() {
 
             function tooltip() {
                 var data = this.point.data;
+                var content = $('<div />');
+                var resolved = ISODate.convert(data.Timestamp);
                 if (data && data.Label) {
+                    console.log(data);
+                    console.log(resolved);
                     var description = data.Description;
                     if (description.length > 140)
                         description = description.substr(0, 139) + '…';
-                    var content = $('<div />');
                     content.append($('<span />').text(data.Label)
                         .css({ 'font-weight': 'bold', color: this.series.color }));
                     content.append(': ');
                     content.append($('<span />').text(description));
+                    content.append('<br />');
+                    content.append($('<span />').text('Resolved: ' + resolved.toLocaleString("en-US")));
                     content.append('<br />');
                     content.append($('<span />').text('Estimate: ' + (data.Estimate == null ? '?' : Math.round(data.Estimate))));
                     content.append('<br />');
                     content.append($('<span />').text('Remaining: ' + Math.round(data.OriginalValue) + ' (' + Math.round(data.Value) + '%)'));
                     return content.html();
                 }
-                return false;
+
+                content.append($('<span />').text(resolved.toLocaleString("en-US")));
+                content.append('<br />');
+                content.append($('<span />').text('Ideal: ' + Math.round(data.Value) + '%'));
+                return content.html();
+            }
+
+            function xAxisFormatter() {
+                return Highcharts.dateFormat('%a %d %b', this.value);
             }
 
             function pointOnClick(point) {
@@ -38,7 +112,7 @@
                 console.log(point);
                 var marker = {};
                 marker.y = point.Value;
-                marker.x = new Date(point.Timestamp);
+                marker.x = new Date(ISODate.convert(point.Timestamp).toLocaleString() + " UTC");
                 if (point.Label && point.Description)
                     marker.name = point.Label + ": " + point.Description;
                 marker.data = point;
@@ -63,14 +137,14 @@
 
                         var series = $.map(data.Lines, convertLinesToSeries);
 
-                        var subtitle = new Date(data.Begin) + ' - ' + new Date(data.End);
+                        var subtitle = ISODate.convert(data.Begin).toLocaleDateString("en-US") + ' - ' + ISODate.convert(data.End).toLocaleDateString("en-US");
 
                         var options =
                         {
                             chart: { type: 'spline' },
                             title: { text: 'Sprint ' + sprintId },
                             subtitle: { text: subtitle },
-                            xAxis: { title: 'Time' },
+                            xAxis: { title: 'Time', type: 'datetime', labels: {formatter: xAxisFormatter} },
                             yAxis: { title: '% Work Remaining', min: 0, max: 100 },
                             series: series,
                             tooltip: { formatter: tooltip },

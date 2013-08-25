@@ -8,6 +8,14 @@
     <meta name="viewport" content="width=device-width" />
     <title>@ViewBag.Title</title>
     @Scripts.Render("~/bundles/modernizr")
+    <style>
+        body, html, #chart {
+            height: 100%;
+        }
+        @@media print {
+            #sprint { display: none;}
+        }
+    </style>
 </head>
 <body>
     @RenderBody()

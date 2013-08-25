@@ -1,0 +1,128 @@
+﻿<select id="sprint"></select>
+<div id="chart"></div>
+@section scripts
+{
+    @Scripts.Render("~/bundles/highcharts")
+    <script type="text/javascript">
+        $(function() {
+
+            function tooltip() {
+                var data = this.point.data;
+                if (data && data.Label) {
+                    var description = data.Description;
+                    if (description.length > 140)
+                        description = description.substr(0, 139) + '…';
+                    var content = $('<div />');
+                    content.append($('<span />').text(data.Label)
+                        .css({ 'font-weight': 'bold', color: this.series.color }));
+                    content.append(': ');
+                    content.append($('<span />').text(description));
+                    content.append('<br />');
+                    content.append($('<span />').text('Estimate: ' + (data.Estimate == null ? '?' : Math.round(data.Estimate))));
+                    content.append('<br />');
+                    content.append($('<span />').text('Remaining: ' + Math.round(data.OriginalValue) + ' (' + Math.round(data.Value) + '%)'));
+                    return content.html();
+                }
+                return false;
+            }
+
+            function pointOnClick(point) {
+                if (point)
+                    if (point.currentTarget)
+                        if (point.currentTarget.data)
+                            if (point.currentTarget.data.Url)
+                                window.open(point.currentTarget.data.Url, "_blank");
+            }
+
+            function convertPointToMarkers(point) {
+                console.log(point);
+                var marker = {};
+                marker.y = point.Value;
+                marker.x = new Date(point.Timestamp);
+                if (point.Label && point.Description)
+                    marker.name = point.Label + ": " + point.Description;
+                marker.data = point;
+                return marker;
+            }
+
+            function convertLinesToSeries(line, lineIndex) {
+                console.log(line);
+                var series = {};
+                series.name = line.Description;
+                series.data = $.map(line.Points, convertPointToMarkers);
+                if (line.Description == 'Ideal') {
+                    series.lineWidth = 4;
+                }
+                return series;
+            }
+
+            function loadSprint(sprintId) {
+                $.getJSON('/api/graph/' + sprintId)
+                    .done(function(data) {
+                        console.log(data);
+
+                        var series = $.map(data.Lines, convertLinesToSeries);
+
+                        var subtitle = new Date(data.Begin) + ' - ' + new Date(data.End);
+
+                        var options =
+                        {
+                            chart: { type: 'spline' },
+                            title: { text: 'Sprint ' + sprintId },
+                            subtitle: { text: subtitle },
+                            xAxis: { title: 'Time' },
+                            yAxis: { title: '% Work Remaining', min: 0, max: 100 },
+                            series: series,
+                            tooltip: { formatter: tooltip },
+                            plotOptions: {
+                                series: {
+                                    point: {
+                                        events: {
+                                            click: pointOnClick
+                                        }
+                                    },
+                                    marker: {
+                                        enabled: false,
+                                        states: {
+                                            hover: {
+                                                enabled: true
+                                            }
+                                        },
+                                        symbol: 'circle'
+                                    }
+                                }
+                            }
+                        };
+                        console.log(options);
+                        $('#chart').highcharts(options);
+                    });
+            }
+
+            function loadSprintList() {
+                $.getJSON('/api/graph')
+                    .done(function(data) {
+                        $.each(data, function() {
+                            var option = $('<option />').text(this.Id);
+                            $('#sprint').append(option);
+                            var start = new Date(this.Start);
+                            var end = new Date(this.End);
+                            var now = Date.now();
+
+                            if (now >= start && now <= end) {
+                                console.log('Current sprint is ' + this.Id);
+                                $('#sprint').val(this.Id);
+                                $('#sprint').trigger('change');
+                            }
+                        });
+                    });
+            }
+
+            $('#sprint').change(function() {
+                loadSprint($(this).val());
+            });
+
+            loadSprintList();
+
+        });
+    </script>
+}

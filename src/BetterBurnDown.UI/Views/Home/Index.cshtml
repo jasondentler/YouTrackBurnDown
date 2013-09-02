@@ -6,65 +6,67 @@
     <script type="text/javascript">
         var ISODate = {
             convert:
-              function (input) {
-                  if (!(typeof input === "string")) throw "ISODate, convert: input must be a string";
-                  var d = input.match(/^(\d{4})-?(\d{2})-?(\d{2})[T ](\d{2}):?(\d{2}):?(\d{2})(\.\d+)?(Z|(?:([+-])(\d{2}):?(\d{2})))$/i);
-                  if (!d) throw "ISODate, convert: Illegal format";
-                  return new Date(
-                    Date.UTC(
-                      d[1], d[2] - 1, d[3],
-                      d[4], d[5], d[6], d[7] || 0 % 1 * 1000 | 0
-                    ) + (
-                      d[8].toUpperCase() === "Z" ? 0 :
-                        (d[10] * 3600 + d[11] * 60) * (d[9] === "-" ? 1000 : -1000)
-                    )
-                  );
-              },
+                function(input) {
+                    if (!(typeof input === "string")) throw "ISODate, convert: input must be a string";
+                    var d = input.match(/^(\d{4})-?(\d{2})-?(\d{2})[T ](\d{2}):?(\d{2}):?(\d{2})(\.\d+)?(Z|(?:([+-])(\d{2}):?(\d{2})))$/i);
+                    if (!d) throw "ISODate, convert: Illegal format";
+                    return new Date(
+                        Date.UTC(
+                            d[1], d[2] - 1, d[3],
+                            d[4], d[5], d[6], d[7] || 0 % 1 * 1000 | 0
+                        ) + (
+                            d[8].toUpperCase() === "Z" ? 0 :
+                                (d[10] * 3600 + d[11] * 60) * (d[9] === "-" ? 1000 : -1000)
+                        )
+                    );
+                },
             format:
-              function (date, utc) {
-                  if (typeof date === "string") date = this.convert(date);
-                  if (!(date instanceof Date)) throw "ISODate, format: t is not a date object";
+                function(date, utc) {
+                    if (typeof date === "string") date = this.convert(date);
+                    if (!(date instanceof Date)) throw "ISODate, format: t is not a date object";
 
-                  var t = { 'FullYear': 0, 'Month': 0, 'Date': 0, 'Hours': 0, 'Minutes': 0, 'Seconds': 0 };
-                  for (var key in t) {
-                      if (t.hasOwnProperty(key)) t[key] = date["get" + (utc ? "UTC" : "") + key]()
-                  }
+                    var t = { 'FullYear': 0, 'Month': 0, 'Date': 0, 'Hours': 0, 'Minutes': 0, 'Seconds': 0 };
+                    for (var key in t) {
+                        if (t.hasOwnProperty(key)) t[key] = date["get" + (utc ? "UTC" : "") + key]()
+                    }
 
-                  return this.month[t.Month]
-                    + " "
-                    + this.ordinal(t.Date)
-                    + ", "
-                    + t.FullYear
-                    + " @@ "
-        + this.clock12(t.Hours, t.Minutes);
-    },
+                    return this.month[t.Month]
+                        + " "
+                        + this.ordinal(t.Date)
+                        + ", "
+                        + t.FullYear
+                        + " @@ "
+                        + this.clock12(t.Hours, t.Minutes);
+                },
             month:
-              [
+            [
                 "January", "February", "March", "April", "May", "June",
                 "July", "August", "September", "October", "November", "December"
-              ],
+            ],
             ordinal:
-              function (n) {
-                  return n + (
-                    [
-                      "th", "st", "nd", "rd"
-                    ][
-                      ((n % 100 / 10) | 0) === 1 ? 0 : n % 10 < 4 ? n % 10 : 0
-                  ]
-                  );
-              },
+                function(n) {
+                    return n + (
+                        [
+                            "th", "st", "nd", "rd"
+                        ][((n % 100 / 10) | 0) === 1 ? 0 : n % 10 < 4 ? n % 10 : 0]
+                    );
+                },
             clock12:
-              function (h24, m, s) {
-                  h24 %= 24;
-                  var h12 = (h24 % 12) || 12;
-                  return h12 + ":" +
-                    (m < 10 ? "0" + m : m) +
-                    (isFinite(s) ? ":" + (s < 10 ? "0" + s : s) : "") +
-                    (h24 < 12 ? "AM" : "PM");
-              }
+                function(h24, m, s) {
+                    h24 %= 24;
+                    var h12 = (h24 % 12) || 12;
+                    return h12 + ":" +
+                        (m < 10 ? "0" + m : m) +
+                        (isFinite(s) ? ":" + (s < 10 ? "0" + s : s) : "") +
+                        (h24 < 12 ? "AM" : "PM");
+                }
         };
     </script>
     <script type="text/javascript">
+        console = console || {};
+        console.log = console.log || function() {
+        };
+
         $(function() {
 
             function tooltip() {
@@ -108,32 +110,67 @@
                                 window.open(point.currentTarget.data.Url, "_blank");
             }
 
-            function convertPointToMarkers(point) {
-                console.log(point);
+            function createMarkerFromPoint(point) {
                 var marker = {};
                 marker.y = point.Value;
                 marker.x = new Date(ISODate.convert(point.Timestamp).toLocaleString() + " UTC");
-                if (point.Label && point.Description)
-                    marker.name = point.Label + ": " + point.Description;
                 marker.data = point;
                 return marker;
+            }
+
+            function convertPointToMarkers(point) {
+                if (point.IsProjection)
+                    return null;
+                console.log(point);
+                var marker = createMarkerFromPoint(point);
+                if (point.Label && point.Description)
+                    marker.name = point.Label + ": " + point.Description;
+                return marker;
+            }
+
+            function convertProjectedMarkersToPoints(point) {
+                if (!point.IsProjection && !(point.next != null && point.next.IsProjection))
+                    return null;
+                return createMarkerFromPoint(point);
             }
 
             function convertLinesToSeries(line, lineIndex) {
                 console.log(line);
                 var series = {};
                 series.name = line.Description;
+                series.color = Highcharts.getOptions().colors[lineIndex];
+
                 series.data = $.map(line.Points, convertPointToMarkers);
                 if (line.Description == 'Ideal') {
                     series.lineWidth = 4;
+                    return series;
+                } else {
+                    var projectionSeries = {};
+                    projectionSeries.name = series.name;
+                    projectionSeries.color = series.color;
+                    projectionSeries.dashStyle = 'dash';
+                    projectionSeries.showInLegend = false;
+                    projectionSeries.data = $.map(line.Points, convertProjectedMarkersToPoints);
+                    return [series, projectionSeries];
                 }
-                return series;
             }
 
             function loadSprint(sprintId) {
                 $.getJSON('/api/graph/' + sprintId)
                     .done(function(data) {
                         console.log(data);
+
+                        $.each(data.Lines, function() {
+                            var line = this;
+                            $.each(line.Points, function(idx) {
+                                this.previous = idx == 0
+                                    ? null
+                                    : line.Points[idx - 1];
+                                this.next = idx == line.Points.length
+                                    ? null
+                                    : line.Points[idx + 1];
+                            });
+                        });
 
                         var series = $.map(data.Lines, convertLinesToSeries);
 

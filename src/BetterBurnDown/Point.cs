@@ -19,6 +19,7 @@ namespace BetterBurnDown
         public DateTime Timestamp { get; private set; }
         public int? Estimate { get; set; }
         public string Url { get; set; }
+        public bool IsProjection { get; set; }
         public float OriginalValue { get; set; }
     }
 }

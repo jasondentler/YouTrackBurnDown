@@ -92,10 +92,29 @@ namespace BetterBurnDown.YouTrack
 
             var graph = new Graph();
 
-            graph.GenerateIdealLine(sprint.Start, sprint.End);
+            var ideal = graph.GenerateIdealLine(sprint.Start, sprint.End);
             
             foreach (var group in issues.GroupBy(i => i.LineLabel))
-                FillLine(graph.AddLine(group.Key), sprint, group.ToArray(), ignoreTypes);
+            {
+                var line = graph.AddLine(group.Key);
+                FillLine(line, sprint, group.ToArray(), ignoreTypes);
+
+                if (ideal.Begin.HasValue && ideal.End.HasValue && line.Points.Any())
+                {
+                    var lastTS = line.Points.Max(p => p.Timestamp);
+
+                    lastTS = new[] {lastTS, DateTime.UtcNow}.Max();
+
+                    if (lastTS < ideal.Begin.Value)
+                        lastTS = ideal.Begin.Value;
+                    if (lastTS > ideal.End.Value)
+                        lastTS = ideal.End.Value;
+
+                    var lastValue = line.Points.Last().Value;
+                    var point = line.AddPoint(lastValue, lastTS);
+                    point.IsProjection = true;
+                }
+            }
 
             return graph.Normalize();
         }

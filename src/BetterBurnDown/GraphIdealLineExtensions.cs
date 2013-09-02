@@ -23,13 +23,13 @@ namespace BetterBurnDown
             }
         }
 
-        public static void GenerateIdealLine(this Graph graph, DateTime firstDay, DateTime lastDay)
+        public static ILine GenerateIdealLine(this Graph graph, DateTime firstDay, DateTime lastDay)
         {
             var staffingPercentages = GenerateTypicalStaffingPercentages(firstDay, lastDay).ToArray();
-            graph.GenerateIdealLine(staffingPercentages.First().Key, staffingPercentages.Skip(1));
+            return graph.GenerateIdealLine(staffingPercentages.First().Key, staffingPercentages.Skip(1));
         }
 
-        public static void GenerateIdealLine(this Graph graph, DateTime start,
+        public static ILine GenerateIdealLine(this Graph graph, DateTime start,
                                              IEnumerable<KeyValuePair<DateTime, float>> staffingPercentages)
         {
             staffingPercentages = staffingPercentages.OrderBy(kv => kv.Key);
@@ -50,6 +50,8 @@ namespace BetterBurnDown
             var ideal = graph.AddLine("Ideal");
             ideal.AddPoint((float) 1.0, start);
             percentages.ToList().ForEach(x => ideal.AddPoint(x.Percentage, x.End));
+
+            return ideal;
         }
 
         private static IEnumerable<Interval> GenerateIntervals(DateTime start, KeyValuePair<DateTime, float>[] staffingPercentages)

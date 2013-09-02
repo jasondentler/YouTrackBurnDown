@@ -29,6 +29,7 @@ namespace BetterBurnDown
             normalized.OriginalValue = point.Value;
             normalized.Estimate = point.Estimate;
             normalized.Url = point.Url;
+            normalized.IsProjection = point.IsProjection;
         }
 
     }

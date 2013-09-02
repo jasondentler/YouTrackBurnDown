@@ -10,5 +10,6 @@ namespace BetterBurnDown
         DateTime Timestamp { get; }
         int? Estimate { get; }
         string Url { get; }
+        bool IsProjection { get; }
     }
 }

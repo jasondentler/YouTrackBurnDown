@@ -93,29 +93,79 @@ namespace BetterBurnDown.YouTrack
             var graph = new Graph();
 
             var ideal = graph.GenerateIdealLine(sprint.Start, sprint.End);
-            
+
             foreach (var group in issues.GroupBy(i => i.LineLabel))
             {
                 var line = graph.AddLine(group.Key);
                 FillLine(line, sprint, group.ToArray(), ignoreTypes);
+            }
 
-                if (ideal.Begin.HasValue && ideal.End.HasValue && line.Points.Any())
+            ideal = graph.Lines.First();
+
+            if (!ideal.Begin.HasValue || !ideal.End.HasValue)
+                return graph.Normalize(); 
+
+            if (DateTime.UtcNow < ideal.Begin.Value || DateTime.UtcNow > ideal.End.Value)
+                return graph.Normalize();
+
+            foreach (var line in graph.Lines.Except(new[] {ideal}).Cast<Line>())
+            {
+                if (!line.Points.Any())
+                    continue;
+
+                if (line.End.HasValue && line.End.Value > ideal.End.Value)
+                    continue;
+
+                if (line.Min.HasValue && line.Min.Value < 0.01)
+                    continue;
+
+                // Figure out how far to project this line...
+                var lastTS = DateTime.UtcNow;
+                if (lastTS > ideal.End.Value)
+                    lastTS = ideal.End.Value;
+                if (line.End.Value > lastTS)
+                    lastTS = line.End.Value;
+                var lastValue = line.Points.Last().Value;
+
+                // Project 0 progress through this moment
+                var point = line.AddPoint(lastValue, lastTS);
+                point.IsProjection = true;
+                point.OriginalValue = (float) Math.Round(lastValue);
+
+                if (lastTS < ideal.End.Value)
                 {
-                    var lastTS = line.Points.Max(p => p.Timestamp);
+                    // Project average progress through the end of the sprint
+                    var elapsed = line.End.Value.Subtract(line.Begin.Value).Ticks;
+                    var completed = line.Min.Value - line.Max.Value;
+                    var rate = completed/elapsed;
+                    
+                    // y = mx + b;
+                    // 0 = rate * x + max;
+                    // -max = rate * x;
+                    // -max / rate = x;
+                    var estimatedCompletion = line.Begin.Value.AddTicks(Convert.ToInt64(-line.Max.Value/rate));
 
-                    lastTS = new[] {lastTS, DateTime.UtcNow}.Max();
+                    // y = mx + b
+                    // y = rate * sprintTicks + max
+                    var sprintTicks = ideal.End.Value.Subtract(line.Begin.Value).Ticks;
 
-                    if (lastTS < ideal.Begin.Value)
-                        lastTS = ideal.Begin.Value;
-                    if (lastTS > ideal.End.Value)
-                        lastTS = ideal.End.Value;
+                    var estimatedPointsRemaining = rate*sprintTicks + line.Max.Value;
 
-                    var lastValue = line.Points.Last().Value;
-                    var point = line.AddPoint(lastValue, lastTS);
+                    point = estimatedCompletion > ideal.End.Value
+                                ? line.AddPoint(estimatedPointsRemaining, ideal.End.Value)
+                                : line.AddPoint(0, estimatedCompletion);
+
+                    point.OriginalValue = (float) Math.Round(point.Value);
+                    
+                    point.Label = "Points remaining at sprint completion: " + Convert.ToInt64(estimatedPointsRemaining);
+                    point.Description = "Estimated completion of points: " + estimatedCompletion.ToString("f");
+
+                    point.Label = string.Format("{0} by {1} points",
+                                                estimatedPointsRemaining >= 0 ? "Over" : "Under",
+                                                Convert.ToInt64(Math.Abs(estimatedPointsRemaining)));
                     point.IsProjection = true;
                 }
             }
-
             return graph.Normalize();
         }
 

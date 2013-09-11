@@ -137,6 +137,10 @@ namespace BetterBurnDown.YouTrack
                     // Project average progress through the end of the sprint
                     var elapsed = line.End.Value.Subtract(line.Begin.Value).Ticks;
                     var completed = line.Min.Value - line.Max.Value;
+
+                    if (Math.Abs(completed - 0) < 0.001)
+                        continue;
+
                     var rate = completed/elapsed;
                     
                     // y = mx + b;

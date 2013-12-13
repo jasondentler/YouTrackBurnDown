@@ -28,7 +28,7 @@ namespace BetterBurnDown.YouTrack
             {
                 return Versions == null
                            ? new string[0]
-                           : JsonConvert.DeserializeObject<string[]>(Versions);
+                           : new [] {JsonConvert.DeserializeObject<string>(Versions)};
             }
         }
 

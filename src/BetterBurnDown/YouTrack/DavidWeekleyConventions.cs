@@ -68,7 +68,7 @@ namespace BetterBurnDown.YouTrack
 
         public IGraph GetGraph(string sprintId)
         {
-            var sprintFilter = " Fix versions: " + sprintId;
+            var sprintFilter = " Sprint: " + sprintId;
             var lineDefinitions = new Dictionary<string, string>
                 {
                     {"#{Business Systems} -land-legal -JDEdwards -Construction -Vendor" + sprintFilter, "BS.NET"},

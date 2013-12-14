@@ -74,6 +74,13 @@ namespace BetterBurnDown.YouTrack
             return Execute<List<Project>>(new RestRequest("/rest/project/all", Method.GET));
         }
 
+        public VersionBundle GetVersionBundle(string bundleName)
+        {
+            var url = "/rest/admin/customfield/versionBundle/" + Uri.EscapeUriString(bundleName);
+            var bundle = Execute<VersionBundle>(new RestRequest(url , Method.GET));
+            return bundle;
+        }
+
         public ISearchResult QueryIssues(string[] filters, string[] fields, int pageSize, int pageNumber)
         {
             var request = new RestRequest("/rest/issue");

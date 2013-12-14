@@ -74,6 +74,8 @@
     <Compile Include="YouTrack\Project.cs" />
     <Compile Include="YouTrack\SearchResult.cs" />
     <Compile Include="YouTrack\SprintSettings.cs" />
+    <Compile Include="YouTrack\Version.cs" />
+    <Compile Include="YouTrack\VersionBundle.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

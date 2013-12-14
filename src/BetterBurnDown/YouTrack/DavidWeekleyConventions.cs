@@ -13,57 +13,29 @@ namespace BetterBurnDown.YouTrack
 
         public IEnumerable<ISprint> GetSprints()
         {
-            var projects = _client.GetProjects();
+            var bundle = _client.GetVersionBundle("BS Sprints");
 
-            var items = projects
-                .SelectMany(p => p.Sprints, (p, s) => Tuple.Create(p.Name, s));
+            var sprints = bundle.Version
+                                .OrderBy(v => v.ReleaseDateAsDate)
+                                .Select(v => new Sprint()
+                                    {
+                                        Id = v.Value,
+                                        End = DateTime.SpecifyKind(v.ReleaseDateAsDate, DateTimeKind.Local)
+                                                      .AddHours((24 - v.ReleaseDateAsDate.Hour) - 24 + 12 + 5)
+                                    }).ToList();
 
-            return GetSprints(items);
+            sprints.Aggregate(DateTime.MinValue, (dt, s) =>
+                {
+                    s.Start = dt.AddHours(-5 + 12 + 8);
+                    return s.End;
+                });
+
+            return sprints;
         }
 
         private ISprint GetSprint(string sprintId)
         {
-            var projects = _client.GetProjects();
-
-            var items = projects
-                .SelectMany(p => p.Sprints, (p, s) => Tuple.Create(p.Name, s))
-                .Where(t => t.Item2 == sprintId);
-
-            var sprints = GetSprints(items).ToArray();
-
-            return new Sprint()
-                {
-                    Id = sprintId,
-                    Start = sprints.Min(s => s.Start),
-                    End = sprints.Max(s => s.End)
-                };
-        }
-
-        private IEnumerable<ISprint> GetSprints(IEnumerable<Tuple<string, string>> projectSprintIds)
-        {
-            var sprints = new Dictionary<string, Sprint>();
-
-            var items = projectSprintIds
-                .Select(t => new {ProjectName = t.Item1, SprintId = t.Item2});
-
-            foreach (var item in items)
-            {
-                var result = _client.GetSprintDates(item.ProjectName, item.SprintId);
-                result.Start = result.Start.Date;
-                result.End = result.End.Date;
-
-                if (!sprints.ContainsKey(item.SprintId))
-                {
-                    sprints[item.SprintId] = result;
-                }
-                else
-                {
-                    var sprint = sprints[item.SprintId];
-                    if (result.Start < sprint.Start) sprint.Start = result.Start;
-                    if (result.End > sprint.End) sprint.End = result.End;
-                }
-            }
-            return sprints.Values;
+            return GetSprints().Single(s => string.Equals(sprintId, s.Id, StringComparison.InvariantCultureIgnoreCase));
         }
 
         public IGraph GetGraph(string sprintId)

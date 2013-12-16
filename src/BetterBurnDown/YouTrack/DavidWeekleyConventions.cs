@@ -43,10 +43,10 @@ namespace BetterBurnDown.YouTrack
             var sprintFilter = " Sprint: " + sprintId;
             var lineDefinitions = new Dictionary<string, string>
                 {
-                    {"#{Business Systems} -land-legal -JDEdwards -Construction -Vendor" + sprintFilter, "BS.NET"},
+                    {"#{Business Systems} -JDEdwards -Construction -Vendor" + sprintFilter, "BS.NET"},
                     {"#{Business Systems} #{JDEdwards}" + sprintFilter, "JDE"},
                     {"#{Marketing Systems}" + sprintFilter, "Marketing"},
-                    {"#{land-legal} #{Construction} #{Vendor}" + sprintFilter, "Headspring"}
+                    {"#{Construction} #{Vendor}" + sprintFilter, "Headspring"}
                 };
 
             var fields = new[] {"id", "resolved", "Estimation", "summary", "type"};
